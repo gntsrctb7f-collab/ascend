@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>ASCEND.</title>
+<!-- iOS home-screen app mode -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ASCEND">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="theme-color" content="#101318">
+<style>
+  :root{
+    --bg:#101318; --card:#191E27; --card-up:#202733; --line:#2B3342;
+    --text:#EDF1F7; --dim:#8A94A6; --accent:#F5B942; --good:#5CC97E;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+    padding-bottom:calc(84px + env(safe-area-inset-bottom));
+    padding-top:env(safe-area-inset-top);
+  }
+  .wrap{max-width:460px; margin:0 auto; padding:24px 16px 0;}
+  .label{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--dim); font-weight:600;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px;}
+  header{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:20px;}
+  .logo{font-size:26px; font-weight:800; letter-spacing:.04em;}
+  .logo span{color:var(--accent);}
+  .streak{font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; text-align:right;}
+  .ringrow{display:flex; align-items:center; gap:20px;}
+  .habit{
+    display:flex; align-items:center; gap:12px; width:100%;
+    background:transparent; border:none; border-bottom:1px solid var(--line);
+    padding:12px 8px; cursor:pointer; text-align:left; border-radius:8px; color:var(--text);
+    font-family:inherit;
+  }
+  .habit.done{background:var(--card-up);}
+  .box{
+    width:22px;height:22px;border-radius:7px;flex-shrink:0;
+    border:2px solid var(--dim); display:flex;align-items:center;justify-content:center;
+    color:var(--bg); font-size:14px; font-weight:800;
+  }
+  .habit.done .box{border-color:var(--good); background:var(--good);}
+  .hname{font-size:15px;font-weight:600;}
+  .habit.done .hname{text-decoration:line-through; opacity:.6;}
+  .hsub{font-size:12px;color:var(--dim);}
+  .grouphead{margin:14px 0 4px; color:var(--accent);}
+  .counter{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line);}
+  .counter:last-child{border-bottom:none;}
+  .cbtns button{
+    background:var(--card-up); color:var(--text); border:1px solid var(--line);
+    border-radius:9px; padding:8px 14px; font-size:14px; font-weight:700; cursor:pointer; margin-left:8px;
+    font-family:inherit;
+  }
+  .cval{font-size:20px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .cval small{font-size:12px; color:var(--dim); font-weight:600;}
+  .exrow{border-bottom:1px solid var(--line); padding:12px 0;}
+  .exhead{display:flex; justify-content:space-between; align-items:baseline;}
+  .exname{font-size:15px; font-weight:700;}
+  .extarget{font-size:12px; color:var(--accent); font-weight:700;}
+  .exlast{font-size:12px; color:var(--dim); margin-top:2px;}
+  .exinputs{display:flex; gap:8px; margin-top:8px;}
+  .exinputs input{
+    width:84px; background:var(--bg); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:9px 10px; font-size:15px; font-family:inherit;
+  }
+  .savebtn{
+    width:100%; margin-top:16px; padding:14px 0; background:var(--accent); color:#14161a;
+    border:none; border-radius:10px; font-size:15px; font-weight:800; letter-spacing:.06em; cursor:pointer;
+    font-family:inherit;
+  }
+  .savebtn.saved{background:var(--good);}
+  .planline{font-size:14px; line-height:1.6; padding:5px 0; border-bottom:1px solid var(--line);}
+  .planline:last-child{border-bottom:none;}
+  nav{
+    position:fixed; bottom:0; left:0; right:0; background:var(--card);
+    border-top:1px solid var(--line); display:flex; justify-content:center; gap:6px;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+  nav button{
+    flex:1; max-width:150px; padding:11px 0; background:transparent; color:var(--dim);
+    border:none; border-radius:10px; font-size:13px; font-weight:800; letter-spacing:.1em;
+    text-transform:uppercase; cursor:pointer; font-family:inherit;
+  }
+  nav button.on{background:var(--card-up); color:var(--accent);}
+  .note{font-size:12px; color:var(--dim); margin-top:10px;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="logo">ASCEND<span>.</span></div>
+      <div class="label" id="dateline"></div>
+    </div>
+    <div>
+      <div class="streak" id="streakval">0🔥</div>
+      <div class="label">day streak</div>
+    </div>
+  </header>
+
+  <!-- TODAY -->
+  <section id="tab-today">
+    <div class="card ringrow">
+      <svg width="120" height="120" viewBox="0 0 200 200" role="img" aria-label="Countdown to September 1">
+        <circle cx="100" cy="100" r="84" fill="none" stroke="var(--line)" stroke-width="10"/>
+        <circle id="ring" cx="100" cy="100" r="84" fill="none" stroke="var(--accent)" stroke-width="10"
+                stroke-linecap="round" transform="rotate(-90 100 100)"/>
+        <text id="ringdays" x="100" y="96" text-anchor="middle" fill="var(--text)" font-size="44" font-weight="800"></text>
+        <text x="100" y="124" text-anchor="middle" fill="var(--dim)" font-size="15" font-weight="600" letter-spacing="2">DAYS</text>
+      </svg>
+      <div>
+        <div class="label">target</div>
+        <div style="font-size:18px;font-weight:700;margin-top:2px;">September 1st</div>
+        <div class="note" id="dayof"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <div class="label">today's checklist</div>
+        <div class="label" id="donecount"></div>
+      </div>
+      <div id="habitlist"></div>
+      <div class="note">5+ keeps the streak alive. Never miss twice.</div>
+    </div>
+
+    <div class="card">
+      <div class="label" style="margin-bottom:6px;">intake</div>
+      <div class="counter">
+        <div>
+          <div class="hname">Protein</div>
+          <div class="hsub">target 120g this week</div>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <div class="cval" id="proteinval">0<small>g</small></div>
+          <div class="cbtns">
+            <button onclick="addIntake('protein',10)">+10</button>
+            <button onclick="addIntake('protein',25)">+25</button>
+          </div>
+        </div>
+      </div>
+      <div class="counter">
+        <div>
+          <div class="hname">Water</div>
+          <div class="hsub">target 2.5L</div>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <div class="cval" id="waterval">0<small>ml</small></div>
+          <div class="cbtns">
+            <button onclick="addIntake('water',250)">+250</button>
+            <button onclick="addIntake('water',500)">+500</button>
+          </div>
+        </div>
+      </div>
+      <div class="note">Hit the targets and the protein/water habits tick themselves.</div>
+    </div>
+  </section>
+
+  <!-- WORKOUT -->
+  <section id="tab-workout" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <div class="label">session 1 · full body restart</div>
+        <div class="label" id="wcount"></div>
+      </div>
+      <div class="note" style="margin:0 0 12px;">~60–70% of May weights. 2–3 reps left in the tank, every set.</div>
+      <div id="exlist"></div>
+      <button class="savebtn" id="savew" onclick="saveWorkout()">SAVE SESSION</button>
+      <div class="note">Saving ticks off today's gym habit automatically.</div>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section id="tab-plan" class="hidden">
+    <div id="planlist"></div>
+    <div class="card" style="background:var(--card-up);">
+      <div class="label" style="margin-bottom:8px;">the one rule</div>
+      <div style="font-size:15px;line-height:1.6;">
+        The plan doesn't decide the outcome — attendance does. Show up, hit protein, and September takes care of itself.
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav>
+  <button id="nav-today" class="on" onclick="showTab('today')">Today</button>
+  <button id="nav-workout" onclick="showTab('workout')">Workout</button>
+  <button id="nav-plan" onclick="showTab('plan')">Plan</button>
+</nav>
+
+<script>
+// ---------- data ----------
+const TARGET = new Date(2026,8,1);       // Sep 1 2026
+const START  = new Date(2026,6,13);      // Jul 13 2026
+const MSDAY  = 86400000;
+
+const HABITS = [
+  {id:"skinAM",  label:"Skincare AM",   sub:"cleanse · moisturise · SPF", group:"Morning"},
+  {id:"creatine",label:"Creatine 5g",   sub:"with any meal",              group:"Morning"},
+  {id:"protein", label:"Protein hit",   sub:"~120g this week",            group:"Through the day"},
+  {id:"water",   label:"Water 2.5–3L",  sub:"flush the sodium",           group:"Through the day"},
+  {id:"gym",     label:"Gym session",   sub:"3× this week",               group:"Through the day"},
+  {id:"skinPM",  label:"Skincare PM",   sub:"cleanse · moisturise",       group:"Night"},
+  {id:"teeth",   label:"Teeth ×2 + floss", sub:"floss tonight",           group:"Night"},
+];
+
+const SESSION_1 = [
+  {id:"vsquat",  name:"V-Squat",            target:"2 × 10"},
+  {id:"incline", name:"Incline Smith Press",target:"2 × 10"},
+  {id:"chins",   name:"Assisted Chin-ups",  target:"2 × 8–10"},
+  {id:"row",     name:"Seated Cable Row",   target:"2 × 10"},
+  {id:"lateral", name:"Lateral Raises",     target:"2 × 12–15"},
+  {id:"pushdown",name:"Rope Pushdowns",     target:"2 × 12"},
+  {id:"curls",   name:"Cable Curls",        target:"2 × 12"},
+  {id:"legraise",name:"Hanging Leg Raises", target:"2 × 10–12"},
+];
+
+const PLAN = [
+  {title:"Weeks 1–2 · Restart", lines:[
+    "Full body 3×/week, ~60–70% of May weights, 2 sets per lift",
+    "Leave 2–3 reps in the tank every set",
+    "Protein 100–120g daily — eggs, meat ×2, yogurt/milk",
+    "Skincare-lite only: cleanse, moisturise, SPF. No actives yet",
+  ]},
+  {title:"Week 3 · Rebuild", lines:[
+    "Back to PPL PPL Rest, 3 sets, weights slightly below old numbers",
+    "Reintroduce exfoliating serum once — forehead/nose/chin only",
+    "Protein up to 140g",
+  ]},
+  {title:"Weeks 4–7 · Push to Sep 1", lines:[
+    "Full PPL at/past May weights — top of rep range → add weight",
+    "Calories ~2,400–2,500, protein 140g held",
+    "Weekly InBody scan is the feedback loop",
+    "Lateral raises every push day. Non-negotiable",
+  ]},
+];
+
+// ---------- storage ----------
+function load(){ try{ return JSON.parse(localStorage.getItem("ascend")||"{}"); }catch(e){ return {}; } }
+function save(d){ try{ localStorage.setItem("ascend", JSON.stringify(d)); }catch(e){} }
+let data = Object.assign({days:{}, workouts:[], intake:{}}, load());
+
+const dkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const today = () => new Date();
+const tkey = () => dkey(today());
+
+// ---------- habits ----------
+function toggleHabit(id){
+  const day = data.days[tkey()] || {};
+  day[id] = !day[id];
+  data.days[tkey()] = day;
+  save(data); render();
+}
+
+function habitCount(key){
+  const day = data.days[key]||{};
+  return HABITS.filter(h=>day[h.id]).length;
+}
+
+function streak(){
+  let s=0; const d=today();
+  if (habitCount(dkey(d))<5) d.setDate(d.getDate()-1);
+  while (habitCount(dkey(d))>=5){ s++; d.setDate(d.getDate()-1); }
+  return s;
+}
+
+// ---------- intake ----------
+function addIntake(kind, amt){
+  const k=tkey();
+  const day = data.intake[k] || {protein:0, water:0};
+  day[kind] = (day[kind]||0) + amt;
+  data.intake[k] = day;
+  // auto-tick habits at target
+  const habits = data.days[k] || {};
+  if (day.protein >= 120) habits.protein = true;
+  if (day.water >= 2500) habits.water = true;
+  data.days[k] = habits;
+  save(data); render();
+}
+
+// ---------- workout ----------
+function saveWorkout(){
+  const entries = {};
+  SESSION_1.forEach(ex=>{
+    const w = document.getElementById("w_"+ex.id).value.trim();
+    const r = document.getElementById("r_"+ex.id).value.trim();
+    if (w||r) entries[ex.id] = {weight:w, reps:r};
+  });
+  if (!Object.keys(entries).length) return;
+  data.workouts.push({date:tkey(), entries});
+  const habits = data.days[tkey()] || {};
+  habits.gym = true;
+  data.days[tkey()] = habits;
+  save(data);
+  const btn=document.getElementById("savew");
+  btn.textContent="SESSION SAVED ✓"; btn.classList.add("saved");
+  setTimeout(()=>{btn.textContent="SAVE SESSION"; btn.classList.remove("saved"); render();},1500);
+}
+
+// ---------- tabs ----------
+function showTab(t){
+  ["today","workout","plan"].forEach(x=>{
+    document.getElementById("tab-"+x).classList.toggle("hidden", x!==t);
+    document.getElementById("nav-"+x).classList.toggle("on", x===t);
+  });
+  window.scrollTo(0,0);
+}
+
+// ---------- render ----------
+function render(){
+  const now = today();
+  document.getElementById("dateline").textContent =
+    now.toLocaleDateString("en-GB",{weekday:"long", day:"numeric", month:"long"});
+
+  const s = streak();
+  const sv = document.getElementById("streakval");
+  sv.textContent = s+"🔥";
+  sv.style.color = s>0 ? "var(--accent)" : "var(--dim)";
+
+  // ring
+  const daysLeft = Math.max(0, Math.ceil((TARGET-now)/MSDAY));
+  const totalDays = Math.round((TARGET-START)/MSDAY);
+  const elapsed = Math.min(totalDays, Math.max(0, Math.round((now-START)/MSDAY)));
+  const CIRC = 2*Math.PI*84;
+  const ring = document.getElementById("ring");
+  ring.setAttribute("stroke-dasharray", CIRC);
+  ring.setAttribute("stroke-dashoffset", CIRC*(1-(totalDays?elapsed/totalDays:0)));
+  document.getElementById("ringdays").textContent = daysLeft;
+  document.getElementById("dayof").textContent =
+    `Day ${elapsed+1} of ${totalDays}. Muscle memory is on your side.`;
+
+  // habits grouped by time of day
+  const day = data.days[tkey()]||{};
+  const done = HABITS.filter(h=>day[h.id]).length;
+  document.getElementById("donecount").textContent = `${done}/${HABITS.length}`;
+  let html=""; let lastGroup="";
+  HABITS.forEach(h=>{
+    if (h.group!==lastGroup){ html+=`<div class="label grouphead">${h.group}</div>`; lastGroup=h.group; }
+    const isDone = !!day[h.id];
+    html += `<button class="habit ${isDone?"done":""}" onclick="toggleHabit('${h.id}')">
+      <div class="box">${isDone?"✓":""}</div>
+      <div><div class="hname">${h.label}</div><div class="hsub">${h.sub}</div></div>
+    </button>`;
+  });
+  document.getElementById("habitlist").innerHTML = html;
+
+  // intake
+  const intake = data.intake[tkey()]||{protein:0,water:0};
+  document.getElementById("proteinval").innerHTML = `${intake.protein||0}<small>g</small>`;
+  document.getElementById("waterval").innerHTML = `${intake.water||0}<small>ml</small>`;
+
+  // workout
+  document.getElementById("wcount").textContent = `${data.workouts.length} logged`;
+  const last = data.workouts.length ? data.workouts[data.workouts.length-1] : null;
+  document.getElementById("exlist").innerHTML = SESSION_1.map(ex=>{
+    const l = last && last.entries[ex.id];
+    return `<div class="exrow">
+      <div class="exhead"><div class="exname">${ex.name}</div><div class="extarget">${ex.target}</div></div>
+      ${l?`<div class="exlast">Last: ${l.weight||"—"}kg × ${l.reps||"—"}</div>`:""}
+      <div class="exinputs">
+        <input id="w_${ex.id}" placeholder="kg" inputmode="decimal">
+        <input id="r_${ex.id}" placeholder="reps" inputmode="numeric">
+      </div>
+    </div>`;
+  }).join("");
+
+  // plan
+  document.getElementById("planlist").innerHTML = PLAN.map(p=>
+    `<div class="card"><div class="label" style="color:var(--accent);margin-bottom:10px;">${p.title}</div>`+
+    p.lines.map(l=>`<div class="planline">${l}</div>`).join("")+`</div>`
+  ).join("");
+}
+
+render();
+</script>
+</body>
+</html>
